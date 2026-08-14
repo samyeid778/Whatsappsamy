@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 
-app = Flask(name)
+app = Flask(__name__)
 
 VERIFY_TOKEN = "samy123"
 
