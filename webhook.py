@@ -16,6 +16,8 @@ def verify_webhook():
     token = request.args.get("hub.verify_token")
     challenge = request.args.get("hub.challenge")
 
+    print("VERIFY REQUEST RECEIVED")
+
     if mode == "subscribe" and token == VERIFY_TOKEN:
         return challenge, 200
 
@@ -27,14 +29,12 @@ def receive_webhook():
 
     data = request.json
 
-    print("Received Webhook:")
+    print("=================================")
+    print("WEBHOOK RECEIVED")
     print(data)
+    print("=================================")
 
-    return jsonify(
-        {
-            "status": "success"
-        }
-    ), 200
+    return jsonify({"status": "ok"}), 200
 
 
 if __name__ == "__main__":
