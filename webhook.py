@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+import json
 
 app = Flask(__name__)
 
@@ -16,8 +17,6 @@ def verify_webhook():
     token = request.args.get("hub.verify_token")
     challenge = request.args.get("hub.challenge")
 
-    print("VERIFY REQUEST RECEIVED")
-
     if mode == "subscribe" and token == VERIFY_TOKEN:
         return challenge, 200
 
@@ -29,10 +28,14 @@ def receive_webhook():
 
     data = request.json
 
-    print("=================================")
-    print("WEBHOOK RECEIVED")
-    print(data)
-    print("=================================")
+    print(
+        json.dumps(
+            data,
+            indent=4,
+            ensure_ascii=False
+        ),
+        flush=True
+    )
 
     return jsonify({"status": "ok"}), 200
 
