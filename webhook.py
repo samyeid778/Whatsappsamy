@@ -32,9 +32,9 @@ def receive_webhook():
 
     raw_data = request.get_data(as_text=True)
 
-    print("========== START ==========")
-    print(raw_data)
-    print("=========== END ===========")
+    with open("payload.txt", "a", encoding="utf-8") as f:
+        f.write(raw_data)
+        f.write("\n\n====================\n\n")
 
     return jsonify({"status": "ok"}), 200
 
