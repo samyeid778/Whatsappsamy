@@ -30,18 +30,13 @@ def verify_webhook():
 @app.route("/webhook", methods=["POST"])
 def receive_webhook():
 
-    data = request.json
+    raw_data = request.get_data(as_text=True)
 
-    import json
-
-    print("\n")
-    print("WEBHOOK RECEIVED")
-    print(json.dumps(data, indent=2))
-    print("END WEBHOOK")
-    print("\n")
+    print("========== START ==========")
+    print(raw_data)
+    print("=========== END ===========")
 
     return jsonify({"status": "ok"}), 200
-
 
 if __name__ == "__main__":
     app.run(
