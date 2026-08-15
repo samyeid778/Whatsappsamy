@@ -1,13 +1,27 @@
 from flask import Flask, request, jsonify
+import csv
+import os
 
 app = Flask(__name__)
 
 VERIFY_TOKEN = "samy123"
 
+CSV_FILE = "message_status.csv"
+
 
 @app.route("/")
 def home():
     return "Webhook Running"
+
+
+@app.route("/payload")
+def payload():
+
+    if not os.path.exists(CSV_FILE):
+        return "No data yet"
+
+    with open(CSV_FILE, "r", encoding="utf-8") as f:
+        return "<pre>" + f.read() + "</pre>"
 
 
 @app.route("/webhook", methods=["GET"])
@@ -26,30 +40,65 @@ def verify_webhook():
 @app.route("/webhook", methods=["POST"])
 def receive_webhook():
 
-    raw_data = request.get_data(as_text=True)
+    data = request.json
 
-    with open("payload.txt", "a", encoding="utf-8") as f:
+    try:
 
-        f.write(raw_data)
-        f.write("\n\n========================\n\n")
+        entries = data.get("entry", [])
+
+        for entry in entries:
+
+            changes = entry.get("changes", [])
+
+            for change in changes:
+
+                value = change.get("value", {})
+
+                statuses = value.get("statuses", [])
+
+                for status_item in statuses:
+
+                    message_id = status_item.get("id")
+                    status = status_item.get("status")
+                    recipient_id = status_item.get("recipient_id")
+                    timestamp = status_item.get("timestamp")
+
+                    file_exists = os.path.exists(CSV_FILE)
+
+                    with open(
+                        CSV_FILE,
+                        "a",
+                        newline="",
+                        encoding="utf-8"
+                    ) as f:
+
+                        writer = csv.writer(f)
+
+                        if not file_exists:
+
+                            writer.writerow([
+                                "message_id",
+                                "status",
+                                "recipient_id",
+                                "timestamp"
+                            ])
+
+                        writer.writerow([
+                            message_id,
+                            status,
+                            recipient_id,
+                            timestamp
+                        ])
+
+    except Exception as e:
+
+        print(str(e))
 
     return jsonify(
         {
             "status": "ok"
         }
     ), 200
-
-
-@app.route("/payload")
-def show_payload():
-
-    try:
-
-        with open("payload.txt", "r", encoding="utf-8") as f:
-            return f.read()
-
-    except Exception:
-        return "No payload yet"
 
 
 if __name__ == "__main__":
