@@ -32,32 +32,15 @@ def receive_webhook():
 
     data = request.json
 
-    print("\n====================")
+    import json
+
+    print("\n")
     print("WEBHOOK RECEIVED")
-    print(json.dumps(data, indent=2, ensure_ascii=False))
-    print("====================\n")
+    print(json.dumps(data, indent=2))
+    print("END WEBHOOK")
+    print("\n")
 
-    with open("webhook_log.txt", "a", encoding="utf-8") as file:
-
-        file.write("\n====================\n")
-        file.write(str(datetime.now()))
-        file.write("\n")
-
-        file.write(
-            json.dumps(
-                data,
-                indent=2,
-                ensure_ascii=False
-            )
-        )
-
-        file.write("\n====================\n")
-
-    return jsonify(
-        {
-            "status": "ok"
-        }
-    ), 200
+    return jsonify({"status": "ok"}), 200
 
 
 if __name__ == "__main__":
