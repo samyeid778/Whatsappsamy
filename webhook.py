@@ -6,6 +6,7 @@ app = Flask(__name__)
 
 VERIFY_TOKEN = "samy123"
 
+
 @app.route("/")
 def home():
     return "Webhook Running"
@@ -18,6 +19,8 @@ def verify_webhook():
     token = request.args.get("hub.verify_token")
     challenge = request.args.get("hub.challenge")
 
+    print("VERIFY REQUEST RECEIVED")
+
     if mode == "subscribe" and token == VERIFY_TOKEN:
         return challenge, 200
 
@@ -29,21 +32,26 @@ def receive_webhook():
 
     data = request.json
 
-    with open("webhook_log.txt", "a", encoding="utf-8") as f:
+    print("\n====================")
+    print("WEBHOOK RECEIVED")
+    print(json.dumps(data, indent=2, ensure_ascii=False))
+    print("====================\n")
 
-        f.write("\n=====================================\n")
-        f.write(str(datetime.now()))
-        f.write("\n")
+    with open("webhook_log.txt", "a", encoding="utf-8") as file:
 
-        f.write(
+        file.write("\n====================\n")
+        file.write(str(datetime.now()))
+        file.write("\n")
+
+        file.write(
             json.dumps(
                 data,
-                ensure_ascii=False,
-                indent=2
+                indent=2,
+                ensure_ascii=False
             )
         )
 
-        f.write("\n")
+        file.write("\n====================\n")
 
     return jsonify(
         {
@@ -53,4 +61,7 @@ def receive_webhook():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    app.run(
+        host="0.0.0.0",
+        port=10000
+    )
