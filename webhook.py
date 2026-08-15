@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 import json
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -28,16 +29,27 @@ def receive_webhook():
 
     data = request.json
 
-    print(
-        json.dumps(
-            data,
-            indent=4,
-            ensure_ascii=False
-        ),
-        flush=True
-    )
+    with open("webhook_log.txt", "a", encoding="utf-8") as f:
 
-    return jsonify({"status": "ok"}), 200
+        f.write("\n=====================================\n")
+        f.write(str(datetime.now()))
+        f.write("\n")
+
+        f.write(
+            json.dumps(
+                data,
+                ensure_ascii=False,
+                indent=2
+            )
+        )
+
+        f.write("\n")
+
+    return jsonify(
+        {
+            "status": "ok"
+        }
+    ), 200
 
 
 if __name__ == "__main__":
