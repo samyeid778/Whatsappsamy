@@ -1,6 +1,9 @@
 from flask import Flask, request, jsonify
 import csv
 import os
+import json
+import tempfile
+
 import gspread
 from google.oauth2.service_account import Credentials
 
@@ -9,21 +12,44 @@ app = Flask(__name__)
 VERIFY_TOKEN = "samy123"
 
 CSV_FILE = "message_status.csv"
+
+# Google Sheets
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
 ]
 
-creds = Credentials.from_service_account_file(
-    "google_credentials.json",
-    scopes=SCOPES
-)
+sheet = None
 
-gc = gspread.authorize(creds)
+try:
+    credentials_json = os.environ.get("GOOGLE_CREDENTIALS")
 
-sheet = gc.open(
-    "WhatsApp Status Log"
-).sheet1
+    if credentials_json:
+
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            delete=False,
+            suffix=".json"
+        ) as temp_file:
+
+            temp_file.write(credentials_json)
+            temp_json_path = temp_file.name
+
+        creds = Credentials.from_service_account_file(
+            temp_json_path,
+            scopes=SCOPES
+        )
+
+        gc = gspread.authorize(creds)
+
+        sheet = gc.open(
+            "WhatsApp Status Log"
+        ).sheet1
+
+except Exception as e:
+    print("Google Sheets Error:")
+    print(str(e))
+
 
 @app.route("/")
 def home():
@@ -36,7 +62,12 @@ def payload():
     if not os.path.exists(CSV_FILE):
         return "No data yet"
 
-    with open(CSV_FILE, "r", encoding="utf-8") as f:
+    with open(
+        CSV_FILE,
+        "r",
+        encoding="utf-8"
+    ) as f:
+
         return "<pre>" + f.read() + "</pre>"
 
 
@@ -76,10 +107,16 @@ def receive_webhook():
 
                     message_id = status_item.get("id")
                     status = status_item.get("status")
-                    recipient_id = status_item.get("recipient_id")
-                    timestamp = status_item.get("timestamp")
+                    recipient_id = status_item.get(
+                        "recipient_id"
+                    )
+                    timestamp = status_item.get(
+                        "timestamp"
+                    )
 
-                    file_exists = os.path.exists(CSV_FILE)
+                    file_exists = os.path.exists(
+                        CSV_FILE
+                    )
 
                     with open(
                         CSV_FILE,
@@ -105,12 +142,17 @@ def receive_webhook():
                             recipient_id,
                             timestamp
                         ])
-sheet.append_row([
-    message_id,
-    status,
-    recipient_id,
-    timestamp
-])
+
+                    # Google Sheet
+                    if sheet:
+
+                        sheet.append_row([
+                            message_id,
+                            status,
+                            recipient_id,
+                            timestamp
+                        ])
+
     except Exception as e:
 
         print(str(e))
