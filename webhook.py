@@ -1,13 +1,29 @@
 from flask import Flask, request, jsonify
 import csv
 import os
+import gspread
+from google.oauth2.service_account import Credentials
 
 app = Flask(__name__)
 
 VERIFY_TOKEN = "samy123"
 
 CSV_FILE = "message_status.csv"
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
 
+creds = Credentials.from_service_account_file(
+    "google_credentials.json",
+    scopes=SCOPES
+)
+
+gc = gspread.authorize(creds)
+
+sheet = gc.open(
+    "WhatsApp Status Log"
+).sheet1
 
 @app.route("/")
 def home():
@@ -89,7 +105,12 @@ def receive_webhook():
                             recipient_id,
                             timestamp
                         ])
-
+sheet.append_row([
+    message_id,
+    status,
+    recipient_id,
+    timestamp
+])
     except Exception as e:
 
         print(str(e))
