@@ -23,6 +23,7 @@ SCOPES = [
 
 sheet = None
 incoming_sheet = None
+conversation_sheet = None
 
 try:
 
@@ -63,6 +64,10 @@ try:
 
         incoming_sheet = spreadsheet.worksheet(
             "Incoming_Messages"
+        )
+
+        conversation_sheet = spreadsheet.worksheet(
+            "Conversation_Log"
         )
 
 except Exception as e:
@@ -262,6 +267,16 @@ def receive_webhook():
                             msg_type
                         ])
 
+                        if conversation_sheet:
+
+                            conversation_sheet.append_row([
+                                phone,
+                                "incoming",
+                                msg_type,
+                                message_text,
+                                timestamp
+                            ])
+
                 # ==================
                 # Status Updates
                 # ==================
@@ -292,76 +307,4 @@ def receive_webhook():
                     )
 
                     timestamp = (
-                        status_item.get(
-                            "timestamp"
-                        )
-                    )
-
-                    readable_time = (
-                        convert_timestamp(
-                            timestamp
-                        )
-                    )
-
-                    file_exists = (
-                        os.path.exists(
-                            CSV_FILE
-                        )
-                    )
-
-                    with open(
-                        CSV_FILE,
-                        "a",
-                        newline="",
-                        encoding="utf-8"
-                    ) as f:
-
-                        writer = csv.writer(
-                            f
-                        )
-
-                        if not file_exists:
-
-                            writer.writerow([
-                                "message_id",
-                                "status",
-                                "recipient_id",
-                                "timestamp"
-                            ])
-
-                        writer.writerow([
-                            message_id,
-                            status,
-                            recipient_id,
-                            timestamp
-                        ])
-
-                    if sheet:
-
-                        sheet.append_row([
-                            message_id,
-                            status,
-                            recipient_id,
-                            timestamp,
-                            readable_time
-                        ])
-
-    except Exception as e:
-
-        print(
-            "Webhook Error:"
-        )
-
-        print(str(e))
-
-    return jsonify({
-        "status": "ok"
-    }), 200
-
-
-if __name__ == "__main__":
-
-    app.run(
-        host="0.0.0.0",
-        port=10000
-    )
+   
