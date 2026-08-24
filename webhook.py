@@ -23,7 +23,6 @@ SCOPES = [
 
 sheet = None
 incoming_sheet = None
-conversation_sheet = None
 
 try:
 
@@ -43,7 +42,9 @@ try:
                 credentials_json
             )
 
-            temp_json_path = temp_file.name
+            temp_json_path = (
+                temp_file.name
+            )
 
         creds = Credentials.from_service_account_file(
             temp_json_path,
@@ -64,22 +65,23 @@ try:
             "Incoming_Messages"
         )
 
-        conversation_sheet = spreadsheet.worksheet(
-            "Conversation_Log"
-        )
-
 except Exception as e:
 
-    print("Google Sheets Error:")
+    print(
+        "Google Sheets Error:"
+    )
+
     print(str(e))
 
+
 # ----------------------------
-# Timestamp Converter
+# Time Converter
 # ----------------------------
 
 def convert_timestamp(ts):
 
     try:
+
         return datetime.fromtimestamp(
             int(ts)
         ).strftime(
@@ -87,8 +89,279 @@ def convert_timestamp(ts):
         )
 
     except:
+
         return ""
+
 
 # ----------------------------
 # Home
-# ---
+# ----------------------------
+
+@app.route("/")
+def home():
+
+    return "Webhook Running"
+
+
+# ----------------------------
+# Payload Viewer
+# ----------------------------
+
+@app.route("/payload")
+def payload():
+
+    if not os.path.exists(
+        CSV_FILE
+    ):
+
+        return "No data yet"
+
+    with open(
+        CSV_FILE,
+        "r",
+        encoding="utf-8"
+    ) as f:
+
+        return (
+            "<pre>"
+            + f.read()
+            + "</pre>"
+        )
+
+
+# ----------------------------
+# Verification
+# ----------------------------
+
+@app.route(
+    "/webhook",
+    methods=["GET"]
+)
+def verify_webhook():
+
+    mode = request.args.get(
+        "hub.mode"
+    )
+
+    token = request.args.get(
+        "hub.verify_token"
+    )
+
+    challenge = request.args.get(
+        "hub.challenge"
+    )
+
+    if (
+        mode == "subscribe"
+        and token == VERIFY_TOKEN
+    ):
+
+        return challenge, 200
+
+    return (
+        "Verification failed",
+        403
+    )
+
+
+# ----------------------------
+# Webhook Receiver
+# ----------------------------
+
+@app.route(
+    "/webhook",
+    methods=["POST"]
+)
+def receive_webhook():
+
+    data = request.json
+
+    try:
+
+        entries = data.get(
+            "entry",
+            []
+        )
+
+        for entry in entries:
+
+            changes = entry.get(
+                "changes",
+                []
+            )
+
+            for change in changes:
+
+                value = change.get(
+                    "value",
+                    {}
+                )
+
+                # ==================
+                # Incoming Messages
+                # ==================
+
+                messages = value.get(
+                    "messages",
+                    []
+                )
+
+                if messages and incoming_sheet:
+
+                    for msg in messages:
+
+                        phone = msg.get(
+                            "from",
+                            ""
+                        )
+
+                        msg_type = msg.get(
+                            "type",
+                            "unknown"
+                        )
+
+                        message_text = ""
+
+                        if msg_type == "text":
+
+                            message_text = (
+                                msg.get(
+                                    "text",
+                                    {}
+                                ).get(
+                                    "body",
+                                    ""
+                                )
+                            )
+
+                        elif (
+                            msg_type
+                            == "interactive"
+                        ):
+
+                            message_text = (
+                                str(
+                                    msg.get(
+                                        "interactive",
+                                        {}
+                                    )
+                                )
+                            )
+
+                        timestamp = convert_timestamp(
+                            msg.get(
+                                "timestamp",
+                                ""
+                            )
+                        )
+
+                        incoming_sheet.append_row([
+                            phone,
+                            message_text,
+                            timestamp,
+                            msg_type
+                        ])
+
+                # ==================
+                # Status Updates
+                # ==================
+
+                statuses = value.get(
+                    "statuses",
+                    []
+                )
+
+                for status_item in statuses:
+
+                    message_id = (
+                        status_item.get(
+                            "id"
+                        )
+                    )
+
+                    status = (
+                        status_item.get(
+                            "status"
+                        )
+                    )
+
+                    recipient_id = (
+                        status_item.get(
+                            "recipient_id"
+                        )
+                    )
+
+                    timestamp = (
+                        status_item.get(
+                            "timestamp"
+                        )
+                    )
+
+                    readable_time = (
+                        convert_timestamp(
+                            timestamp
+                        )
+                    )
+
+                    file_exists = (
+                        os.path.exists(
+                            CSV_FILE
+                        )
+                    )
+
+                    with open(
+                        CSV_FILE,
+                        "a",
+                        newline="",
+                        encoding="utf-8"
+                    ) as f:
+
+                        writer = csv.writer(
+                            f
+                        )
+
+                        if not file_exists:
+
+                            writer.writerow([
+                                "message_id",
+                                "status",
+                                "recipient_id",
+                                "timestamp"
+                            ])
+
+                        writer.writerow([
+                            message_id,
+                            status,
+                            recipient_id,
+                            timestamp
+                        ])
+
+                    if sheet:
+
+                        sheet.append_row([
+                            message_id,
+                            status,
+                            recipient_id,
+                            timestamp,
+                            readable_time
+                        ])
+
+    except Exception as e:
+
+        print(
+            "Webhook Error:"
+        )
+
+        print(str(e))
+
+    return jsonify({
+        "status": "ok"
+    }), 200
+
+
+if __name__ == "__main__":
+
+    app.run(
+        host="0.0.0.0",
+        port=10000
+    )
