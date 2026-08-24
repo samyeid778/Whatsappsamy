@@ -64,7 +64,9 @@ try:
         incoming_sheet = spreadsheet.worksheet(
             "Incoming_Messages"
         )
-
+conversation_sheet = spreadsheet.worksheet(
+    "Conversation_Log"
+)
 except Exception as e:
 
     print(
@@ -261,7 +263,13 @@ def receive_webhook():
                             timestamp,
                             msg_type
                         ])
-
+conversation_sheet.append_row([
+    phone,
+    "incoming",
+    msg_type,
+    message_text,
+    timestamp
+])
                 # ==================
                 # Status Updates
                 # ==================
@@ -345,7 +353,13 @@ def receive_webhook():
                             timestamp,
                             readable_time
                         ])
-
+conversation_sheet.append_row([
+    recipient_id,
+    "outgoing",
+    status,
+    "",
+    readable_time
+])
     except Exception as e:
 
         print(
