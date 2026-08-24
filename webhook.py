@@ -306,5 +306,8 @@ def receive_webhook():
                         )
                     )
 
-                    timestamp = (
-   )
+                   timestamp = (
+    status_item.get(
+        "timestamp"
+    )
+)
