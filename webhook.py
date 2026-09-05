@@ -221,123 +221,102 @@ def receive_webhook():
                             timestamp
                         ])
 
-               # ------------------
-# Status Updates
-# ------------------
+                # ------------------
+                # Status Updates
+                # ------------------
 
-statuses = value.get(
-    "statuses",
-    []
-)
+                statuses = value.get(
+                    "statuses",
+                    []
+                )
 
-for status_item in statuses:
+                for status_item in statuses:
 
-    print(status_item)
+                    message_id = status_item.get(
+                        "id"
+                    )
 
-    message_id = status_item.get(
-        "id"
+                    status = status_item.get(
+                        "status"
+                    )
+print("STATUS ITEM:")
+print(status_item)
+                    recipient_id = status_item.get(
+                        "recipient_id"
+                    )
+
+                    timestamp = status_item.get(
+                        "timestamp"
+                    )
+
+                    readable_time = convert_timestamp(
+                        timestamp
+                    )
+
+                    file_exists = os.path.exists(
+                        CSV_FILE
+                    )
+
+                    with open(
+                        CSV_FILE,
+                        "a",
+                        newline="",
+                        encoding="utf-8"
+                    ) as f:
+
+                        writer = csv.writer(
+                            f
+                        )
+
+                        if not file_exists:
+
+                            writer.writerow([
+                                "message_id",
+                                "status",
+                                "recipient_id",
+                                "timestamp"
+                            ])
+
+                        writer.writerow([
+                            message_id,
+                            status,
+                            recipient_id,
+                            timestamp
+                        ])
+
+                    if sheet:
+
+                        sheet.append_row([
+                            message_id,
+                            status,
+                            recipient_id,
+                            timestamp,
+                            readable_time
+                        ])
+
+                    if conversation_sheet:
+
+                        conversation_sheet.append_row([
+                            recipient_id,
+                            "outgoing",
+                            status,
+                            "",
+                            readable_time
+                        ])
+
+    except Exception as e:
+
+        print("Webhook Error:")
+        print(str(e))
+
+    return jsonify({
+        "status": "ok"
+    }), 200
+
+
+if __name__ == "__main__":
+
+    app.run(
+        host="0.0.0.0",
+        port=10000
     )
-
-    status = status_item.get(
-        "status"
-    )
-
-    recipient_id = status_item.get(
-        "recipient_id"
-    )
-
-    timestamp = status_item.get(
-        "timestamp"
-    )
-
-    readable_time = convert_timestamp(
-        timestamp
-    )
-
-    error_code = ""
-    error_title = ""
-    error_message = ""
-
-    errors = status_item.get(
-        "errors",
-        []
-    )
-
-    if errors:
-
-        first_error = errors[0]
-
-        error_code = first_error.get(
-            "code",
-            ""
-        )
-
-        error_title = first_error.get(
-            "title",
-            ""
-        )
-
-        error_message = first_error.get(
-            "message",
-            ""
-        )
-
-    file_exists = os.path.exists(
-        CSV_FILE
-    )
-
-    with open(
-        CSV_FILE,
-        "a",
-        newline="",
-        encoding="utf-8"
-    ) as f:
-
-        writer = csv.writer(
-            f
-        )
-
-        if not file_exists:
-
-            writer.writerow([
-                "message_id",
-                "status",
-                "recipient_id",
-                "timestamp",
-                "error_code",
-                "error_title",
-                "error_message"
-            ])
-
-        writer.writerow([
-            message_id,
-            status,
-            recipient_id,
-            timestamp,
-            error_code,
-            error_title,
-            error_message
-        ])
-
-    if sheet:
-
-        sheet.append_row([
-            message_id,
-            status,
-            recipient_id,
-            timestamp,
-            readable_time,
-            error_code,
-            error_title,
-            error_message
-        ])
-
-    if conversation_sheet:
-
-        conversation_sheet.append_row([
-            recipient_id,
-            "outgoing",
-            status,
-            error_title,
-            readable_time
-        ])
