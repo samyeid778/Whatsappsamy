@@ -232,6 +232,8 @@ def receive_webhook():
 
                 for status_item in statuses:
 
+                    print(status_item)
+                    
                     message_id = status_item.get(
                         "id"
                     )
@@ -239,8 +241,7 @@ def receive_webhook():
                     status = status_item.get(
                         "status"
                     )
-print("STATUS ITEM:")
-print(status_item)
+
                     recipient_id = status_item.get(
                         "recipient_id"
                     )
