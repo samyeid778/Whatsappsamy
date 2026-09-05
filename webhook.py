@@ -239,7 +239,8 @@ def receive_webhook():
                     status = status_item.get(
                         "status"
                     )
-
+print("STATUS ITEM:")
+print(status_item)
                     recipient_id = status_item.get(
                         "recipient_id"
                     )
