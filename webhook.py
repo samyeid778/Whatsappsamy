@@ -232,6 +232,8 @@ def receive_webhook():
 
                 for status_item in statuses:
 
+                    print(status_item)
+
                     message_id = status_item.get(
                         "id"
                     )
@@ -239,8 +241,7 @@ def receive_webhook():
                     status = status_item.get(
                         "status"
                     )
-print("STATUS ITEM:")
-print(status_item)
+
                     recipient_id = status_item.get(
                         "recipient_id"
                     )
@@ -252,6 +253,40 @@ print(status_item)
                     readable_time = convert_timestamp(
                         timestamp
                     )
+
+                    error_code = ""
+                    error_title = ""
+                    error_message = ""
+
+                    errors = status_item.get(
+                        "errors",
+                        []
+                    )
+
+                    if errors:
+
+                        first_error = errors[0]
+
+                        error_code = str(
+                            first_error.get(
+                                "code",
+                                ""
+                            )
+                        )
+
+                        error_title = str(
+                            first_error.get(
+                                "title",
+                                ""
+                            )
+                        )
+
+                        error_message = str(
+                            first_error.get(
+                                "message",
+                                ""
+                            )
+                        )
 
                     file_exists = os.path.exists(
                         CSV_FILE
@@ -274,14 +309,20 @@ print(status_item)
                                 "message_id",
                                 "status",
                                 "recipient_id",
-                                "timestamp"
+                                "timestamp",
+                                "error_code",
+                                "error_title",
+                                "error_message"
                             ])
 
                         writer.writerow([
                             message_id,
                             status,
                             recipient_id,
-                            timestamp
+                            timestamp,
+                            error_code,
+                            error_title,
+                            error_message
                         ])
 
                     if sheet:
@@ -291,7 +332,10 @@ print(status_item)
                             status,
                             recipient_id,
                             timestamp,
-                            readable_time
+                            readable_time,
+                            error_code,
+                            error_title,
+                            error_message
                         ])
 
                     if conversation_sheet:
@@ -300,7 +344,7 @@ print(status_item)
                             recipient_id,
                             "outgoing",
                             status,
-                            "",
+                            error_title,
                             readable_time
                         ])
 
